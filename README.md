@@ -1,3 +1,4 @@
+[![Gem Version](https://badge.fury.io/rb/lipsttyck.png)](https://rubygems.org/gems/lipsttyck)
 [![Dependency Status](https://gemnasium.com/RogWilco/LipsTTYck.png)](https://gemnasium.com/RogWilco/LipsTTYck)
 
 # LipsTTYck
