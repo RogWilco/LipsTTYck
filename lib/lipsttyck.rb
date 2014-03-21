@@ -46,7 +46,10 @@ class LipsTTYck
 			"margin" => 80,
 			"marginTemplateOverrides" => true,
 			"showStdOut" => LOG_LEVEL_NEVER,
-			"showStdErr" => LOG_LEVEL_FAILURE
+			"showStdErr" => LOG_LEVEL_FAILURE,
+			"colorStdIn" => "@blue",
+			"colorStdOut" => "@gray",
+			"colorStdErr" => "@red"
 		}
 
 		@config.merge!(config)
@@ -412,11 +415,12 @@ class LipsTTYck
 	# Executes the specified command, passing any output to the respective
 	# output streams.
 	# 
-	# @param [Array] commands one or more commands to be executed
+	# @param [Array]   commands  one or more commands to be executed
+	# @param [Boolean] formatted whether or not any resultin output should be formatted
 	#
 	# @return void
 	#
-	def passthru(commands, colorStdOut = "@gray", colorStdErr = "@red", colorStdIn = "@blue")
+	def passthru(commands, formatted = false)
 		# Convert single command to an array.
 		if !commands.kind_of?(Array)
 			commands = [commands]
@@ -424,8 +428,14 @@ class LipsTTYck
 
 		commands.each do |command|
 			PTY.spawn(command) do |stdout, stdin, pid|
-				# self.out("#{colorStdIn}(> " + self.class.escape(command) + ")", true, false)
-				stdout.each_line { |line| self.out("#{colorStdOut}(| " + self.class.escape(line.gsub!(/\n/m, "")) + ")") }
+				stdout.each_line do |line|
+					if formatted
+						# self.out("#{colorStdIn}(> " + self.class.escape(command) + ")", true, false)
+						self.out(@config['colorStdOut'] + "(| " + self.class.escape(line.gsub!(/\n/m, "")) + ")")
+					else
+						self.out(self.class.escape(line.gsub!(/\n/m, "")))
+					end
+				end
 			end
 		end
 	end
