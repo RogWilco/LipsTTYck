@@ -16,22 +16,22 @@ class LipsTTYck
   LOG_LEVEL_ALWAYS = 2
 
   # Templates
-  @@templatePad = "\n\n"
-  @@templatePrefix = ""
-  @@templatePadding = " "
-  @@templateIndentOn = "#@@templatePrefix#@@templatePadding"
-  @@templateIndentOff = ""
-  @@templateH1 = "#@@templatePrefix@gray(================================================================================)"
-  @@templateH2 = "#@@templatePrefix@gray(--------------------------------------------------------------------------------)"
-  @@templateDiv = "#@@templateH2"
-  @@templateBlockquote = "| "
-  @@templateEnd = "#@@templateH2"
-  @@templateSuccess = "[  @green(OK)  ]"  # "@green(✓)", "@green(✔)"︎
-  @@templateFailure = "[ @red(FAIL) ]"    # "@red(✗)", "@red(✘)"
-  @@templateSkip = "[ @blue(SKIP) ]"      # "@blue(~)", "@blue(⋯)"
-  @@templateColorPrompt = "@blue"
-  @@templateColorStdOut = "@gray"
-  @@templateColorStdErr = "@red"
+  @@template_pad = "\n\n"
+  @@template_prefix = ""
+  @@template_padding = " "
+  @@template_indent_on = "#@@template_prefix#@@template_padding"
+  @@template_indent_off = ""
+  @@template_h1 = "#@@template_prefix@gray(================================================================================)"
+  @@template_h2 = "#@@template_prefix@gray(--------------------------------------------------------------------------------)"
+  @@template_div = "#@@template_h2"
+  @@template_blockquote = "| "
+  @@template_end = "#@@template_h2"
+  @@template_success = "[  @green(OK)  ]"  # "@green(✓)", "@green(✔)"︎
+  @@template_failure = "[ @red(FAIL) ]"    # "@red(✗)", "@red(✘)"
+  @@template_skip = "[ @blue(SKIP) ]"      # "@blue(~)", "@blue(⋯)"
+  @@template_color_prompt = "@blue"
+  @@template_color_stdout = "@gray"
+  @@template_color_stderr = "@red"
 
   ##
   # Initializes a new LipsTTYck instance.
@@ -55,139 +55,139 @@ class LipsTTYck
     @config.merge!(config)
 
     # Flags
-    @entryQueued = false
+    @entry_queued = false
 
     # Caches
-    @cacheLast = ""
-    @cacheLine = ""
+    @cache_last = ""
+    @cache_line = ""
 
     # Margin-Sensitive Template Overrides
     if(@config['marginTemplateOverrides'])
       # H1 Override
-      @@templateH1 = "#@@templatePrefix@gray("
+      @@template_h1 = "#@@template_prefix@gray("
 
       @config['margin'].times do
-        @@templateH1 += "="
+        @@template_h1 += "="
       end
 
-      @@templateH1 += ")"
+      @@template_h1 += ")"
 
       # H2 Override
-      @@templateH2 = "#@@templatePrefix@gray("
+      @@template_h2 = "#@@template_prefix@gray("
 
       @config['margin'].times do
-        @@templateH2 += "-"
+        @@template_h2 += "-"
       end
 
-      @@templateH2 += ")"
+      @@template_h2 += ")"
 
       # DIV Override
-      @@templateDiv = "#@@templateH2"
+      @@template_div = "#@@template_h2"
 
       # END Override
-      @@templateEnd = "#@@templateH2"
+      @@template_end = "#@@template_h2"
     end
   end
 
   ##
   # Outputs the specified text, processing any detected markup.
   # 
-  # @param [String]  text            the text to be displayed
-  # @param [Boolean] trailingNewline whether or not to automatically append a trailing newline character
-  # @param [Boolean] autoIndent      whether or not to automatically apply indentation
-  # @param [Boolean] rightJustified  whether or not to right-align the text according to the configured margin width
+  # @param [String]  text             the text to be displayed
+  # @param [Boolean] trailing_newline whether or not to automatically append a trailing newline character
+  # @param [Boolean] auto_indent      whether or not to automatically apply indentation
+  # @param [Boolean] right_justified  whether or not to right-align the text according to the configured margin width
   # 
   # @return void
   # 
-  def out(text, trailingNewline = true, autoIndent = true, rightJustified = false)
+  def out(text, trailing_newline = true, auto_indent = true, right_justified = false)
     formatted = "#{text}"
     unformatted = "#{text}"
-    templateIndent = autoIndent ? @@templateIndentOn : @@templateIndentOff
-    line = "#@cacheLine"
+    template_indent = auto_indent ? @@template_indent_on : @@template_indent_off
+    line = "#@cache_line"
 
     # Apply Indentation
-    formatted.gsub!(/\n/m, "\n#{templateIndent}")
+    formatted.gsub!(/\n/m, "\n#{template_indent}")
 
     # Apply Markup Formatting
     case formatted
       when /@H1(?: (.*))?/im
-        formatted = "#@@templateH1\n#{templateIndent}@green(#$1)\n#@@templateH1"
+        formatted = "#@@template_h1\n#{template_indent}@green(#$1)\n#@@template_h1"
 
         # Handle Queued Entry
-        if @entryQueued
-          formatted = "#@@templatePad#{formatted}"
-          @entryQueued = false
+        if @entry_queued
+          formatted = "#@@template_pad#{formatted}"
+          @entry_queued = false
         end
 
       when /@H2(?: (.*))?/im
         stripped = $1
 
-        if @cacheLast =~ /^@H[12](.*)/i
-          formatted="#{templateIndent}@yellow(#{stripped})\n#@@templateH2"
+        if @cache_last =~ /^@H[12](.*)/i
+          formatted="#{template_indent}@yellow(#{stripped})\n#@@template_h2"
         else
-          formatted="#@@templateH2\n#{templateIndent}@yellow(#{stripped})\n#@@templateH2"
+          formatted="#@@template_h2\n#{template_indent}@yellow(#{stripped})\n#@@template_h2"
         end
 
         # Handle Queued Entry
-        if @entryQueued
-          formatted = "#@@templatePad#{formatted}"
-          @entryQueued = false
+        if @entry_queued
+          formatted = "#@@template_pad#{formatted}"
+          @entry_queued = false
         end
 
       when /@DIV(?: (.*))?/im
         if $1
-          formatted = "#@@templateDiv\n#$1"
+          formatted = "#@@template_div\n#$1"
         else
-          formatted = "#@@templateDiv"
+          formatted = "#@@template_div"
         end
 
       when /@BLOCKQUOTE\((.*)(?<!\\)\)/im
-        formatted = "#$1".gsub(/\n/m, "\n#@@templateBlockquote")
+        formatted = "#$1".gsub(/\n/m, "\n#@@template_blockquote")
 
       when /@SUCCESS(?: (.*))?/im
-        formatted = "#@@templateSuccess#@@templatePadding"
+        formatted = "#@@template_success#@@template_padding"
 
       when /@FAILURE(?: (.*))?/im
-        formatted = "#@@templateFailure#@@templatePadding"
+        formatted = "#@@template_failure#@@template_padding"
 
       when /@SKIP(?: (.*))?/im
-        formatted = "#@@templateSkip#@@templatePadding"
+        formatted = "#@@template_skip#@@template_padding"
 
       when /@ENTRY(?: (.*))?/im
-        @entryQueued = true
+        @entry_queued = true
         return
 
       when /@EXIT(?: (.*))?/im
         # Handle Queued Entry
-        if @entryQueued
-          @entryQueued = false
+        if @entry_queued
+          @entry_queued = false
         else
           # Handle Exit w/ Heading
-          if @cacheLast =~ /^@H[12].*/im
+          if @cache_last =~ /^@H[12].*/im
             # Handle Double Newline (After Heading)
-            if @@templatePad[0,2] == "\n"
-              formatted = @@templatePad[2,-1]
+            if @@template_pad[0,2] == "\n"
+              formatted = @@template_pad[2,-1]
             else
-              formatted = "#@@templatePad"
+              formatted = "#@@template_pad"
             end
           else
             # Handle Exit w/ Text
             if formatted.length > 5
-              formatted = "#{templateIndent}" << formatted[6..-1] << "\n#@@templateEnd#@@templatePad"
+              formatted = "#{template_indent}" << formatted[6..-1] << "\n#@@template_end#@@template_pad"
             else
-              formatted = "#@@templateEnd#@@templatePad"
+              formatted = "#@@template_end#@@template_pad"
             end
           end
 
-          @entryQueued = false
+          @entry_queued = false
         end
       else
-        formatted = "#{templateIndent}" + formatted.gsub(/\\@/, "@")
+        formatted = "#{template_indent}" + formatted.gsub(/\\@/, "@")
 
         # Handle Queued Entry
-        if @entryQueued
-          formatted = "#@@templatePad#@@templateDiv\n#{formatted}"
-          @entryQueued = false
+        if @entry_queued
+          formatted = "#@@template_pad#@@template_div\n#{formatted}"
+          @entry_queued = false
         end
     end
 
@@ -217,21 +217,21 @@ class LipsTTYck
     end
 
     # Strip Escaping Slashes
-    escapedPattern = /\\([@\(\)])/im
+    escaped_pattern = /\\([@\(\)])/im
 
-    stripped.gsub!(escapedPattern, "\\1")
-    formatted.gsub!(escapedPattern, "\\1")
+    stripped.gsub!(escaped_pattern, "\\1")
+    formatted.gsub!(escaped_pattern, "\\1")
 
     # Apply Right-Justification
-    if rightJustified
-      paddingSize = (@config['margin'] - line.length) - stripped.length
-      padding = "%#{paddingSize}s" % ""
+    if right_justified
+      padding_size = (@config['margin'] - line.length) - stripped.length
+      padding = "%#{padding_size}s" % ""
 
       formatted = "#{padding}#{formatted}"
     end
 
     # Apply Trailing Newline
-    if trailingNewline
+    if trailing_newline
       formatted = "#{formatted}\n"
     end
 
@@ -239,13 +239,13 @@ class LipsTTYck
     print "#{formatted}"
 
     # Cache Unformatted Version
-    @cacheLast = unformatted
+    @cache_last = unformatted
 
     # Cache Current Line
-    if !trailingNewline
-      @cacheLine = @cacheLine << stripped
+    if !trailing_newline
+      @cache_line = @cache_line << stripped
     else
-      @cacheLine = ""
+      @cache_line = ""
     end
   end
 
@@ -279,7 +279,7 @@ class LipsTTYck
       prompt += " \\\(#{default}\\\): "
     end
 
-    out("#@@templateColorPrompt(#{prompt})", false)
+    out("#@@template_color_prompt(#{prompt})", false)
 
     value = $stdin.gets.chomp
 
@@ -321,7 +321,7 @@ class LipsTTYck
       prompt += " \\\(y/N\\\): "
     end
 
-    out("#@@templateColorPrompt(#{prompt})", false)
+    out("#@@template_color_prompt(#{prompt})", false)
 
     response = $stdin.gets.chomp
 
@@ -353,7 +353,7 @@ class LipsTTYck
   # 
   def attempt(label, commands)
     # Setup
-    commandOutputLogs = [];
+    command_output_logs = [];
     failed = false
 
     # Convert single command to an array.
@@ -369,13 +369,13 @@ class LipsTTYck
       # Output progress indicator for current command.
       self.out(".", false, false)
 
-      Open3.popen3(command) do |stdin, stdout, stderr, waitThread|
-        commandOutputLogs << {
+      Open3.popen3(command) do |stdin, stdout, stderr, wait_thread|
+        command_output_logs << {
           :stdout => stdout.eof? ? nil : stdout.read,
           :stderr => stderr.eof? ? nil : stderr.read
         }
 
-        if waitThread.value.to_i > 0
+        if wait_thread.value.to_i > 0
           failed = true
           break
         end
@@ -391,19 +391,19 @@ class LipsTTYck
 
     # Output I/O streams according to config.
     if @config['showStdOut'] == LOG_LEVEL_ALWAYS || failed && @config['showStdOut'] == LOG_LEVEL_FAILURE || @config['showStdErr'] == LOG_LEVEL_ALWAYS || failed && @config['showStdErr'] == LOG_LEVEL_FAILURE
-      lastIndex = commandOutputLogs.length - 1
+      last_index = command_output_logs.length - 1
 
       self.out("")
 
-      commandOutputLogs.each_index do |i|
+      command_output_logs.each_index do |i|
         # STDOUT
-        if (@config['showStdOut'] == LOG_LEVEL_ALWAYS) || (failed && @config['showStdOut'] == LOG_LEVEL_FAILURE && i == lastIndex)
-          blockquote(commandOutputLogs[i][:stdout], @@templateColorStdOut)
+        if (@config['showStdOut'] == LOG_LEVEL_ALWAYS) || (failed && @config['showStdOut'] == LOG_LEVEL_FAILURE && i == last_index)
+          blockquote(command_output_logs[i][:stdout], @@template_color_stdout)
         end
 
         # STDERR
-        if (@config['showStdErr']) == LOG_LEVEL_ALWAYS || (failed && @config['showStdErr'] == LOG_LEVEL_FAILURE && i == lastIndex)
-          blockquote(commandOutputLogs[i][:stderr], @@templateColorStdErr)
+        if (@config['showStdErr']) == LOG_LEVEL_ALWAYS || (failed && @config['showStdErr'] == LOG_LEVEL_FAILURE && i == last_index)
+          blockquote(command_output_logs[i][:stderr], @@template_color_stderr)
         end
       end
     end
